@@ -2,8 +2,19 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-bg)]">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5 md:px-10 md:py-7">
+    <div
+      className="relative flex min-h-screen flex-col bg-[var(--color-bg)]"
+      style={{
+        backgroundImage: "url(/landing.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/60 via-[var(--color-bg)]/55 to-[var(--color-bg)]/85"
+      />
+      <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5 md:px-10 md:py-7">
         <Link href="/" className="flex flex-col leading-none">
           <span className="font-serif text-2xl font-medium tracking-tight text-[var(--color-accent-strong)]">
             Zenfulcove
@@ -20,7 +31,7 @@ export default function Home() {
         </Link>
       </header>
 
-      <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-12 md:px-10 md:py-16">
+      <section className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-12 md:px-10 md:py-16">
         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
           Reserve a Kayak
         </p>
@@ -47,7 +58,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mx-auto w-full max-w-5xl px-5 pb-10 pt-6 text-xs text-[var(--color-ink-muted)] md:px-10 md:pb-14">
+      <footer className="relative z-10 mx-auto w-full max-w-5xl px-5 pb-10 pt-6 text-xs text-[var(--color-ink-muted)] md:px-10 md:pb-14">
         <p>
           &copy; {new Date().getFullYear()} Zenfulcove ·{" "}
           <Link href="/terms" className="hover:text-[var(--color-accent)]">
