@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --font-serif:
+    var(--font-display), ui-serif, Georgia, Cambria, "Times New Roman", Times,
+    serif;
+}
+
 :root {
   --color-bg: #f7f5ef;
   --color-surface: #ffffff;
@@ -27,4 +33,15 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* Tailwind 4 dropped the default `cursor: pointer` on buttons — restore it. */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+summary {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }

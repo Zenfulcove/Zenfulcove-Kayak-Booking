@@ -2,37 +2,66 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="space-y-10">
-      <section className="rounded-3xl bg-[var(--color-surface)] p-10 shadow-sm">
-        <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-accent-strong)]">
-          Paddle the cove.
-        </h1>
-        <p className="mt-3 max-w-xl text-[var(--color-ink-muted)]">
-          Reserve a kayak by the hour or the day. Quiet water, good vibes,
-          straight from the dock.
-        </p>
+    <div className="flex min-h-screen flex-col bg-[var(--color-bg)]">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5 md:px-10 md:py-7">
+        <Link href="/" className="flex flex-col leading-none">
+          <span className="font-serif text-2xl font-medium tracking-tight text-[var(--color-accent-strong)]">
+            Zenfulcove
+          </span>
+          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-ink-muted)]">
+            Kayak Booking
+          </span>
+        </Link>
         <Link
           href="/book"
-          className="mt-6 inline-flex items-center rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[var(--color-accent-strong)]"
+          className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium transition hover:border-[var(--color-accent)]"
         >
-          Book a kayak →
+          Book
         </Link>
+      </header>
+
+      <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-12 md:px-10 md:py-16">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+          Reserve a Kayak
+        </p>
+        <h2 className="mt-4 max-w-3xl font-serif text-5xl font-medium leading-[1.05] tracking-tight md:text-7xl">
+          Out on the water.
+        </h2>
+        <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--color-ink-muted)] md:text-lg">
+          Five kayaks, three colors, two seats between them. Pick a day, claim
+          a boat, and we&apos;ll hand off the lockbox code.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/book"
+            className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-[var(--color-accent-strong)]"
+          >
+            Book a Kayak →
+          </Link>
+          <Link
+            href="/fleet"
+            className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-white px-6 py-3 text-sm font-medium transition hover:border-[var(--color-accent)]"
+          >
+            See the fleet
+          </Link>
+        </div>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-3">
-        <Card title="Hourly rentals" body="Quick paddles for sunrise or sunset." />
-        <Card title="Full-day adventures" body="Pack a lunch and explore the cove." />
-        <Card title="Solo or tandem" body="Boats sized for one or two paddlers." />
-      </section>
-    </div>
-  );
-}
-
-function Card({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-      <h2 className="text-base font-semibold">{title}</h2>
-      <p className="mt-2 text-sm text-[var(--color-ink-muted)]">{body}</p>
+      <footer className="mx-auto w-full max-w-5xl px-5 py-6 text-xs text-[var(--color-ink-muted)] md:px-10">
+        <p>
+          &copy; {new Date().getFullYear()} Zenfulcove ·{" "}
+          <Link href="/terms" className="hover:text-[var(--color-accent)]">
+            Terms
+          </Link>{" "}
+          ·{" "}
+          <a
+            href="tel:+15122737962"
+            className="hover:text-[var(--color-accent)]"
+          >
+            +1 (512) 273-7962
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

@@ -1,42 +1,54 @@
 import "./globals.css";
-import Link from "next/link";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Fraunces } from "next/font/google";
+import LayoutShell from "@/components/LayoutShell";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  axes: ["SOFT", "WONK", "opsz"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "ZenfulCove Kayaks",
   description: "Book a kayak at ZenfulCove.",
 };
 
-export default function RootLayout({
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+async function getCurrentUserEmail(): Promise<string | null> {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return null;
+  }
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const userEmail = await getCurrentUserEmail();
+
   return (
-    <html lang="en">
+    <html lang="en" className={fraunces.variable}>
       <body>
-        <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-            <Link
-              href="/"
-              className="text-lg font-semibold tracking-tight text-[var(--color-accent-strong)]"
-            >
-              ZenfulCove Kayaks
-            </Link>
-            <nav className="flex items-center gap-6 text-sm">
-              <Link href="/" className="hover:text-[var(--color-accent)]">
-                Home
-              </Link>
-              <Link href="/book" className="hover:text-[var(--color-accent)]">
-                Book
-              </Link>
-            </nav>
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
-        <footer className="mt-16 border-t border-[var(--color-border)] py-6 text-center text-xs text-[var(--color-ink-muted)]">
-          &copy; {new Date().getFullYear()} ZenfulCove
-        </footer>
+        <LayoutShell userEmail={userEmail}>{children}</LayoutShell>
       </body>
     </html>
   );
