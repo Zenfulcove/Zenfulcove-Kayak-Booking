@@ -12,8 +12,21 @@ type BookingPayload = {
   customerEmail: string | null;
   customerPhone: string | null;
   reservationId: string;
+  lastName: string;
   waiverAccepted: boolean;
 };
+
+function lastNameMatches(
+  guestName: string | null | undefined,
+  input: string
+): boolean {
+  if (!guestName) return false;
+  const g = guestName.toLowerCase().trim();
+  const i = input.toLowerCase().trim();
+  if (!i) return false;
+  const words = g.split(/\s+/);
+  return words.includes(i) || g.endsWith(i);
+}
 
 const REFERENCE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
@@ -41,6 +54,9 @@ function isValidPayload(p: Partial<BookingPayload>): p is BookingPayload {
     typeof p.reservationId !== "string" ||
     p.reservationId.trim().length === 0
   ) {
+    return false;
+  }
+  if (typeof p.lastName !== "string" || p.lastName.trim().length === 0) {
     return false;
   }
   if (p.waiverAccepted !== true) return false;
@@ -96,6 +112,13 @@ export async function POST(req: Request) {
           "We couldn't find that reservation. Double-check the booking number on your confirmation email.",
       },
       { status: 404 }
+    );
+  }
+
+  if (!lastNameMatches(reservation.guestName, body.lastName)) {
+    return NextResponse.json(
+      { error: "That last name doesn't match the reservation." },
+      { status: 401 }
     );
   }
 

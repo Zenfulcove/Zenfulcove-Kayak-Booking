@@ -1,18 +1,36 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type BookingSuccess, type Kayak } from "@/lib/types";
 
-type FieldName = "name" | "email" | "phone" | "reservation" | "waiver";
+type FieldName =
+  | "name"
+  | "email"
+  | "phone"
+  | "reservation"
+  | "lastName"
+  | "waiver";
 
 const noErrors: Record<FieldName, boolean> = {
   name: false,
   email: false,
   phone: false,
   reservation: false,
+  lastName: false,
   waiver: false,
 };
+
+export type Validation =
+  | { status: "idle" }
+  | { status: "loading" }
+  | {
+      status: "ok";
+      isFree: boolean;
+      cabin: string;
+      guestName: string | null;
+    }
+  | { status: "error"; error: string };
 
 function shake(el: HTMLElement | null) {
   if (!el) return;
@@ -31,31 +49,99 @@ function shake(el: HTMLElement | null) {
   );
 }
 
+const labelClass =
+  "block text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]";
+
 export default function BookingForm({
   kayak,
   dateIso,
   onSuccess,
+  onPreviewNameChange,
+  onValidationChange,
 }: {
   kayak: Kayak;
   dateIso: string;
   onSuccess?: (result: BookingSuccess) => void;
+  onPreviewNameChange?: (name: string) => void;
+  onValidationChange?: (validation: Validation) => void;
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [reservation, setReservation] = useState("");
+  const [lastName, setLastName] = useState("");
   const [waiver, setWaiver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] =
     useState<Record<FieldName, boolean>>(noErrors);
+  const [validation, setValidation] = useState<Validation>({ status: "idle" });
 
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const reservationRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
   const waiverRef = useRef<HTMLLabelElement>(null);
+
+  // Bubble preview name up so the modal heading can read "Almost there, X."
+  useEffect(() => {
+    onPreviewNameChange?.(name);
+  }, [name, onPreviewNameChange]);
+
+  // Bubble validation up so the kayak card price can cross out for free.
+  useEffect(() => {
+    onValidationChange?.(validation);
+  }, [validation, onValidationChange]);
+
+  // Debounced reservation lookup whenever both fields are filled.
+  useEffect(() => {
+    const r = reservation.trim();
+    const l = lastName.trim();
+    if (!r || !l) {
+      setValidation({ status: "idle" });
+      return;
+    }
+    setValidation({ status: "loading" });
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/bookings/validate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ reservationId: r, lastName: l, dateIso }),
+          signal: controller.signal,
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          setValidation({
+            status: "error",
+            error: json.error ?? "Validation failed",
+          });
+        } else {
+          setValidation({
+            status: "ok",
+            isFree: Boolean(json.isFree),
+            cabin: typeof json.cabin === "string" ? json.cabin : "",
+            guestName: json.guestName ?? null,
+          });
+        }
+      } catch (err) {
+        if ((err as { name?: string })?.name === "AbortError") return;
+        setValidation({ status: "error", error: "Network error" });
+      }
+    }, 500);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [reservation, lastName, dateIso]);
+
+  const lookupReady =
+    reservation.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    validation.status === "ok";
 
   function clearFieldError(field: FieldName) {
     setErrors((prev) => (prev[field] ? { ...prev, [field]: false } : prev));
@@ -63,7 +149,7 @@ export default function BookingForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || !lookupReady) return;
 
     const next: Record<FieldName, boolean> = { ...noErrors };
     if (name.trim().length === 0) next.name = true;
@@ -72,6 +158,7 @@ export default function BookingForm({
     }
     if (phone.trim().length === 0) next.phone = true;
     if (reservation.trim().length === 0) next.reservation = true;
+    if (lastName.trim().length === 0) next.lastName = true;
     if (!waiver) next.waiver = true;
 
     const anyError = Object.values(next).some(Boolean);
@@ -82,6 +169,7 @@ export default function BookingForm({
       if (next.email) shake(emailRef.current);
       if (next.phone) shake(phoneRef.current);
       if (next.reservation) shake(reservationRef.current);
+      if (next.lastName) shake(lastNameRef.current);
       if (next.waiver) shake(waiverRef.current);
       return;
     }
@@ -99,6 +187,7 @@ export default function BookingForm({
           customerEmail: email.trim(),
           customerPhone: phone.trim(),
           reservationId: reservation.trim(),
+          lastName: lastName.trim(),
           waiverAccepted: waiver,
         }),
       });
@@ -114,7 +203,8 @@ export default function BookingForm({
         kayak,
         stayLocation: json.cabin ?? "",
         isComplimentary: Boolean(json.isComplimentary),
-        amountCents: typeof json.amountCents === "number" ? json.amountCents : 0,
+        amountCents:
+          typeof json.amountCents === "number" ? json.amountCents : 0,
       };
 
       if (onSuccess) {
@@ -136,13 +226,68 @@ export default function BookingForm({
     "border-[var(--color-border)] focus:border-[var(--color-accent)]";
   const inputBad = "border-red-500 focus:border-red-500";
 
+  const submitDisabled = submitting || !lookupReady;
+  let submitLabel = "Confirm reservation";
+  if (submitting) submitLabel = "Reserving…";
+  else if (validation.status === "loading") submitLabel = "Checking…";
+
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label htmlFor="reservation_id" className={labelClass}>
+            Reservation Number
+          </label>
+          <input
+            ref={reservationRef}
+            id="reservation_id"
+            type="text"
+            placeholder="From your confirmation email"
+            value={reservation}
+            onChange={(e) => {
+              setReservation(e.target.value);
+              clearFieldError("reservation");
+            }}
+            className={`${inputBaseClass} ${
+              errors.reservation ? inputBad : inputOk
+            }`}
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="last_name" className={labelClass}>
+            Last Name
+          </label>
+          <input
+            ref={lastNameRef}
+            id="last_name"
+            type="text"
+            placeholder="As on your reservation"
+            value={lastName}
+            onChange={(e) => {
+              setLastName(e.target.value);
+              clearFieldError("lastName");
+            }}
+            className={`${inputBaseClass} ${
+              errors.lastName ? inputBad : inputOk
+            }`}
+          />
+        </div>
+      </div>
+
+      {validation.status === "error" && (
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {validation.error}
+        </p>
+      )}
+      {validation.status === "ok" && (
+        <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-900">
+          Verified · {validation.cabin}
+          {validation.guestName ? ` · ${validation.guestName}` : ""}
+        </p>
+      )}
+
       <div className="space-y-2">
-        <label
-          htmlFor="customer_name"
-          className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink-muted)]"
-        >
+        <label htmlFor="customer_name" className={labelClass}>
           Your Name
         </label>
         <input
@@ -161,10 +306,7 @@ export default function BookingForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
-          <label
-            htmlFor="customer_email"
-            className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink-muted)]"
-          >
+          <label htmlFor="customer_email" className={labelClass}>
             Email
           </label>
           <input
@@ -181,10 +323,7 @@ export default function BookingForm({
           />
         </div>
         <div className="space-y-2">
-          <label
-            htmlFor="customer_phone"
-            className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink-muted)]"
-          >
+          <label htmlFor="customer_phone" className={labelClass}>
             Phone
           </label>
           <input
@@ -200,29 +339,6 @@ export default function BookingForm({
             className={`${inputBaseClass} ${errors.phone ? inputBad : inputOk}`}
           />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <label
-          htmlFor="reservation_id"
-          className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink-muted)]"
-        >
-          Reservation Number
-        </label>
-        <input
-          ref={reservationRef}
-          id="reservation_id"
-          type="text"
-          placeholder="From your booking confirmation email"
-          value={reservation}
-          onChange={(e) => {
-            setReservation(e.target.value);
-            clearFieldError("reservation");
-          }}
-          className={`${inputBaseClass} ${
-            errors.reservation ? inputBad : inputOk
-          }`}
-        />
       </div>
 
       <label
@@ -269,10 +385,10 @@ export default function BookingForm({
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitDisabled}
         className="w-full cursor-pointer rounded-full bg-[var(--color-accent)] py-3 text-sm font-medium text-white transition hover:bg-[var(--color-accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {submitting ? "Reserving…" : "Confirm reservation"}
+        {submitLabel}
       </button>
     </form>
   );
