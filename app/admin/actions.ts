@@ -1,11 +1,16 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { COLOR_OPTIONS } from "@/lib/types";
 
 const allowedColors = new Set(COLOR_OPTIONS.map((c) => c.value));
+
+const KAYAK_IMAGE_BUCKET = "kayak-images";
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 type KayakWritable = {
   code: string;
@@ -52,6 +57,44 @@ function parseKayakFields(formData: FormData): KayakWritable {
   };
 }
 
+async function uploadImageIfPresent(
+  formData: FormData
+): Promise<string | null> {
+  const value = formData.get("image");
+  if (!(value instanceof File)) return null;
+  if (value.size === 0) return null;
+
+  if (!value.type.startsWith("image/")) {
+    throw new Error("Photo must be an image file.");
+  }
+  if (value.size > MAX_IMAGE_BYTES) {
+    throw new Error("Photo must be under 5MB.");
+  }
+
+  const ext = (value.name.split(".").pop() ?? "jpg")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, 6) || "jpg";
+  const path = `${randomUUID()}.${ext}`;
+
+  const buffer = Buffer.from(await value.arrayBuffer());
+  const supabase = createSupabaseAdminClient();
+  const { error: uploadError } = await supabase.storage
+    .from(KAYAK_IMAGE_BUCKET)
+    .upload(path, buffer, {
+      contentType: value.type,
+      upsert: false,
+    });
+  if (uploadError) {
+    throw new Error(`Photo upload failed: ${uploadError.message}`);
+  }
+
+  const { data } = supabase.storage
+    .from(KAYAK_IMAGE_BUCKET)
+    .getPublicUrl(path);
+  return data.publicUrl;
+}
+
 function explainSaveError(error: { code?: string; message: string }): string {
   if (error.code === "23505") return "That code is already in use.";
   return `Save failed: ${error.message}`;
@@ -59,8 +102,13 @@ function explainSaveError(error: { code?: string; message: string }): string {
 
 export async function createKayak(formData: FormData) {
   const fields = parseKayakFields(formData);
+  const imageUrl = await uploadImageIfPresent(formData);
+
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("kayaks").insert(fields);
+  const { error } = await supabase.from("kayaks").insert({
+    ...fields,
+    image_url: imageUrl,
+  });
   if (error) throw new Error(explainSaveError(error));
 
   revalidatePath("/admin");
@@ -73,8 +121,15 @@ export async function updateKayak(formData: FormData) {
   if (!id) throw new Error("Missing kayak id.");
 
   const fields = parseKayakFields(formData);
+  const newImageUrl = await uploadImageIfPresent(formData);
+
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("kayaks").update(fields).eq("id", id);
+  const update: KayakWritable & { image_url?: string } = { ...fields };
+  if (newImageUrl) {
+    update.image_url = newImageUrl;
+  }
+
+  const { error } = await supabase.from("kayaks").update(update).eq("id", id);
   if (error) throw new Error(explainSaveError(error));
 
   revalidatePath("/admin");

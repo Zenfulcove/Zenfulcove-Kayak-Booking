@@ -19,9 +19,22 @@ export default function KayakForm({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const file = formData.get("image");
+    if (file instanceof File && file.size > 0) {
+      if (!file.type.startsWith("image/")) {
+        setError("Photo must be an image file.");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Photo must be under 5MB.");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
-      const formData = new FormData(e.currentTarget);
       if (isEdit) {
         await updateKayak(formData);
       } else {
@@ -119,6 +132,31 @@ export default function KayakForm({
         <ColorPicker name="color" defaultValue={kayak?.color ?? "#2563eb"} />
       </Field>
 
+      <Field label="Photo" full>
+        {kayak?.image_url && (
+          <div className="mb-2 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={kayak.image_url}
+              alt={kayak.name}
+              className="h-16 w-16 rounded-lg object-cover ring-1 ring-[var(--color-border)]"
+            />
+            <span className="text-xs text-[var(--color-ink-muted)]">
+              Current photo. Pick a new file to replace it.
+            </span>
+          </div>
+        )}
+        <input
+          name="image"
+          type="file"
+          accept="image/*"
+          className="block w-full cursor-pointer text-sm text-[var(--color-ink)] file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-[var(--color-border)] file:bg-white file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--color-ink)] file:transition hover:file:border-[var(--color-accent)]"
+        />
+        <span className="block text-[11px] text-[var(--color-ink-muted)]">
+          JPG or PNG, up to 5MB. Square images crop best.
+        </span>
+      </Field>
+
       <label className="flex items-center gap-2 text-sm sm:col-span-2">
         <input
           name="is_active"
@@ -182,12 +220,14 @@ export default function KayakForm({
 function Field({
   label,
   children,
+  full,
 }: {
   label: string;
   children: React.ReactNode;
+  full?: boolean;
 }) {
   return (
-    <label className="block space-y-1">
+    <label className={`block space-y-1 ${full ? "sm:col-span-2" : ""}`}>
       <span className="block text-xs font-medium text-[var(--color-ink-muted)]">
         {label}
       </span>

@@ -6,6 +6,7 @@ export type Kayak = {
   length_feet: number | null;
   daily_rate_cents: number;
   color: string;
+  image_url: string | null;
   is_active: boolean;
   display_order: number;
   created_at: string;
