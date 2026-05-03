@@ -4,18 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type BookingSuccess, type Kayak } from "@/lib/types";
 
-type FieldName =
-  | "name"
-  | "email"
-  | "phone"
-  | "reservation"
-  | "lastName"
-  | "waiver";
+type FieldName = "reservation" | "lastName" | "waiver";
 
 const noErrors: Record<FieldName, boolean> = {
-  name: false,
-  email: false,
-  phone: false,
   reservation: false,
   lastName: false,
   waiver: false,
@@ -56,19 +47,14 @@ export default function BookingForm({
   kayak,
   dateIso,
   onSuccess,
-  onPreviewNameChange,
   onValidationChange,
 }: {
   kayak: Kayak;
   dateIso: string;
   onSuccess?: (result: BookingSuccess) => void;
-  onPreviewNameChange?: (name: string) => void;
   onValidationChange?: (validation: Validation) => void;
 }) {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [reservation, setReservation] = useState("");
   const [lastName, setLastName] = useState("");
   const [waiver, setWaiver] = useState(false);
@@ -78,19 +64,10 @@ export default function BookingForm({
     useState<Record<FieldName, boolean>>(noErrors);
   const [validation, setValidation] = useState<Validation>({ status: "idle" });
 
-  const nameRef = useRef<HTMLInputElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const phoneRef = useRef<HTMLInputElement>(null);
   const reservationRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
   const waiverRef = useRef<HTMLLabelElement>(null);
 
-  // Bubble preview name up so the modal heading can read "Almost there, X."
-  useEffect(() => {
-    onPreviewNameChange?.(name);
-  }, [name, onPreviewNameChange]);
-
-  // Bubble validation up so the kayak card price can cross out for free.
   useEffect(() => {
     onValidationChange?.(validation);
   }, [validation, onValidationChange]);
@@ -152,11 +129,6 @@ export default function BookingForm({
     if (submitting || !lookupReady) return;
 
     const next: Record<FieldName, boolean> = { ...noErrors };
-    if (name.trim().length === 0) next.name = true;
-    if (email.trim().length === 0 || !/.+@.+\..+/.test(email.trim())) {
-      next.email = true;
-    }
-    if (phone.trim().length === 0) next.phone = true;
     if (reservation.trim().length === 0) next.reservation = true;
     if (lastName.trim().length === 0) next.lastName = true;
     if (!waiver) next.waiver = true;
@@ -165,9 +137,6 @@ export default function BookingForm({
     setErrors(next);
 
     if (anyError) {
-      if (next.name) shake(nameRef.current);
-      if (next.email) shake(emailRef.current);
-      if (next.phone) shake(phoneRef.current);
       if (next.reservation) shake(reservationRef.current);
       if (next.lastName) shake(lastNameRef.current);
       if (next.waiver) shake(waiverRef.current);
@@ -183,9 +152,6 @@ export default function BookingForm({
         body: JSON.stringify({
           kayakId: kayak.id,
           dateIso,
-          customerName: name.trim(),
-          customerEmail: email.trim(),
-          customerPhone: phone.trim(),
           reservationId: reservation.trim(),
           lastName: lastName.trim(),
           waiverAccepted: waiver,
@@ -198,7 +164,7 @@ export default function BookingForm({
         bookingId: json.bookingId,
         referenceCode: json.referenceCode,
         lockboxCode: json.lockboxCode ?? null,
-        customerName: name.trim(),
+        customerName: typeof json.customerName === "string" ? json.customerName : "",
         dateIso,
         kayak,
         stayLocation: json.cabin ?? "",
@@ -285,61 +251,6 @@ export default function BookingForm({
           {validation.guestName ? ` · ${validation.guestName}` : ""}
         </p>
       )}
-
-      <div className="space-y-2">
-        <label htmlFor="customer_name" className={labelClass}>
-          Your Name
-        </label>
-        <input
-          ref={nameRef}
-          id="customer_name"
-          type="text"
-          placeholder="Who's paddling?"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            clearFieldError("name");
-          }}
-          className={`${inputBaseClass} ${errors.name ? inputBad : inputOk}`}
-        />
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <label htmlFor="customer_email" className={labelClass}>
-            Email
-          </label>
-          <input
-            ref={emailRef}
-            id="customer_email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              clearFieldError("email");
-            }}
-            className={`${inputBaseClass} ${errors.email ? inputBad : inputOk}`}
-          />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="customer_phone" className={labelClass}>
-            Phone
-          </label>
-          <input
-            ref={phoneRef}
-            id="customer_phone"
-            type="tel"
-            placeholder="(555) 123-4567"
-            value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              clearFieldError("phone");
-            }}
-            className={`${inputBaseClass} ${errors.phone ? inputBad : inputOk}`}
-          />
-        </div>
-      </div>
 
       <label
         ref={waiverRef}

@@ -8,13 +8,21 @@ import { fetchReservationById, LodgifyError } from "@/lib/lodgify";
 type BookingPayload = {
   kayakId: string;
   dateIso: string;
-  customerName: string;
-  customerEmail: string | null;
-  customerPhone: string | null;
   reservationId: string;
   lastName: string;
   waiverAccepted: boolean;
 };
+
+const REFERENCE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+
+function generateReferenceCode(length = 6): string {
+  const bytes = randomBytes(length);
+  let code = "";
+  for (let i = 0; i < length; i++) {
+    code += REFERENCE_ALPHABET[bytes[i] % REFERENCE_ALPHABET.length];
+  }
+  return code;
+}
 
 function lastNameMatches(
   guestName: string | null | undefined,
@@ -28,26 +36,9 @@ function lastNameMatches(
   return words.includes(i) || g.endsWith(i);
 }
 
-const REFERENCE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-
-function generateReferenceCode(length = 6): string {
-  const bytes = randomBytes(length);
-  let code = "";
-  for (let i = 0; i < length; i++) {
-    code += REFERENCE_ALPHABET[bytes[i] % REFERENCE_ALPHABET.length];
-  }
-  return code;
-}
-
 function isValidPayload(p: Partial<BookingPayload>): p is BookingPayload {
   if (typeof p.kayakId !== "string") return false;
   if (typeof p.dateIso !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(p.dateIso)) {
-    return false;
-  }
-  if (
-    typeof p.customerName !== "string" ||
-    p.customerName.trim().length === 0
-  ) {
     return false;
   }
   if (
@@ -60,17 +51,6 @@ function isValidPayload(p: Partial<BookingPayload>): p is BookingPayload {
     return false;
   }
   if (p.waiverAccepted !== true) return false;
-  if (p.customerEmail !== null && p.customerEmail !== undefined) {
-    if (
-      typeof p.customerEmail !== "string" ||
-      !/.+@.+\..+/.test(p.customerEmail)
-    ) {
-      return false;
-    }
-  }
-  if (p.customerPhone !== null && p.customerPhone !== undefined) {
-    if (typeof p.customerPhone !== "string") return false;
-  }
   return true;
 }
 
@@ -93,7 +73,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1. Validate the Lodgify reservation.
   let reservation;
   try {
     reservation = await fetchReservationById(body.reservationId);
@@ -130,7 +109,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // 2. Reservation must not have ended already (in property timezone).
   const today = todayIso();
   if (reservation.departureIso < today) {
     return NextResponse.json(
@@ -139,8 +117,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3. Kayak date must fall within the stay window:
-  //    arrival ≤ kayak date < departure.
   if (
     !isoLessOrEqual(reservation.arrivalIso, body.dateIso) ||
     !isoLessOrEqual(body.dateIso, reservation.departureIso)
@@ -153,7 +129,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // 4. Validate kayak exists and is active.
   const supabase = createSupabaseAdminClient();
   const { data: kayak, error: kayakError } = await supabase
     .from("kayaks")
@@ -165,8 +140,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Kayak not available" }, { status: 404 });
   }
 
-  // 5. Determine if this is the guest's free kayak (1 complimentary per
-  //    Lodgify reservation; subsequent bookings are paid).
   const { count: existingCount } = await supabase
     .from("bookings")
     .select("*", { count: "exact", head: true })
@@ -177,11 +150,12 @@ export async function POST(req: Request) {
   const amountCents = isComplimentary ? 0 : kayak.daily_rate_cents;
   const status = isComplimentary ? "confirmed" : "pending";
 
-  // 6. Compute UTC moments for the booking day in Austin.
   const start = propertyTimeToUtc(body.dateIso, 9, 0);
   const end = propertyTimeToUtc(body.dateIso, 17, 0);
 
-  // 7. Insert with retry on reference_code collision (very rare).
+  const customerName =
+    (reservation.guestName ?? "").trim() || body.lastName.trim();
+
   let inserted: { id: string; reference_code: string } | null = null;
   let lastError: { code?: string; message: string } | null = null;
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -191,11 +165,9 @@ export async function POST(req: Request) {
       .insert({
         reference_code: referenceCode,
         kayak_id: kayak.id,
-        customer_name: body.customerName.trim(),
-        customer_email: body.customerEmail
-          ? body.customerEmail.trim().toLowerCase()
-          : null,
-        customer_phone: body.customerPhone ? body.customerPhone.trim() : null,
+        customer_name: customerName,
+        customer_email: null,
+        customer_phone: null,
         stay_location: cabin,
         lodgify_reservation_id: reservation.id,
         is_complimentary: isComplimentary,
@@ -243,6 +215,7 @@ export async function POST(req: Request) {
     isComplimentary,
     amountCents,
     cabin,
+    customerName,
     guestName: reservation.guestName,
   });
 }

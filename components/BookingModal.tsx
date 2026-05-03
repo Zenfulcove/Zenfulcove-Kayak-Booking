@@ -10,8 +10,8 @@ import BookingConfirmation from "./BookingConfirmation";
 import { formatMoney, type BookingSuccess, type Kayak } from "@/lib/types";
 import { formatLongDate } from "@/lib/dates";
 
-function firstNameOf(value: string): string {
-  const trimmed = value.trim();
+function firstNameOf(value: string | null | undefined): string {
+  const trimmed = (value ?? "").trim();
   if (!trimmed) return "";
   return trimmed.split(/\s+/)[0];
 }
@@ -28,28 +28,22 @@ export default function BookingModal({
   onClose: () => void;
 }) {
   const [success, setSuccess] = useState<BookingSuccess | null>(null);
-  const [previewName, setPreviewName] = useState("");
   const [validation, setValidation] = useState<Validation>({ status: "idle" });
 
-  // Reset state when modal closes so reopening shows a fresh form.
   useEffect(() => {
     if (!open) {
       setSuccess(null);
-      setPreviewName("");
       setValidation({ status: "idle" });
     }
   }, [open]);
 
-  // Stable callbacks so the BookingForm useEffects don't re-fire each render.
-  const handlePreviewName = useCallback((value: string) => {
-    setPreviewName(value);
-  }, []);
   const handleValidation = useCallback((value: Validation) => {
     setValidation(value);
   }, []);
 
   const isFree = validation.status === "ok" && validation.isFree;
-  const greetingName = firstNameOf(previewName);
+  const greetingName =
+    validation.status === "ok" ? firstNameOf(validation.guestName) : "";
   const heading = greetingName
     ? `Almost there, ${greetingName}.`
     : "Almost there.";
@@ -106,7 +100,6 @@ export default function BookingModal({
               kayak={kayak}
               dateIso={dateIso}
               onSuccess={setSuccess}
-              onPreviewNameChange={handlePreviewName}
               onValidationChange={handleValidation}
             />
           </div>
