@@ -65,11 +65,24 @@ export default function BookingModal({
               </h2>
             </div>
             <header className="flex items-center gap-4 rounded-2xl bg-[var(--color-bg)] p-4">
-              <KayakIllustration
-                color={kayak.color}
-                capacity={kayak.capacity}
-                className="h-12 w-auto shrink-0"
-              />
+              <div className="relative aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface)]">
+                {kayak.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={kayak.image_url}
+                    alt={kayak.name}
+                    className="absolute inset-0 h-full w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <KayakIllustration
+                      color={kayak.color}
+                      capacity={kayak.capacity}
+                      className="h-3/5 w-auto"
+                    />
+                  </div>
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="font-serif text-lg font-medium tracking-tight">
                   {kayak.name}

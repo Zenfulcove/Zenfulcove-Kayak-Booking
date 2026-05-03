@@ -30,12 +30,23 @@ export default function FleetManager({ kayaks }: { kayaks: Kayak[] }) {
               onClick={() => setState({ mode: "edit", kayak: k })}
               className="block w-full cursor-pointer overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] text-left transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="flex h-40 items-center justify-center bg-[var(--color-bg)]">
-                <KayakIllustration
-                  color={k.color}
-                  capacity={k.capacity}
-                  className="h-20 w-auto"
-                />
+              <div className="relative aspect-square w-full overflow-hidden bg-[var(--color-bg)]">
+                {k.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={k.image_url}
+                    alt={k.name}
+                    className="absolute inset-0 h-full w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <KayakIllustration
+                      color={k.color}
+                      capacity={k.capacity}
+                      className="h-1/2 w-auto"
+                    />
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between gap-2">

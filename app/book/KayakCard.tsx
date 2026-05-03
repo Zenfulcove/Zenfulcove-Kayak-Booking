@@ -33,20 +33,20 @@ export default function KayakCard({
           : "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg"
       }`}
     >
-      <div className="relative aspect-square w-full overflow-hidden bg-[var(--color-bg)]">
+      <div className="relative aspect-[1.65/1] w-full overflow-hidden bg-[var(--color-bg)]">
         {kayak.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={kayak.image_url}
             alt={kayak.name}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <KayakIllustration
               color={kayak.color}
               capacity={kayak.capacity}
-              className="h-1/3 w-auto"
+              className="h-1/2 w-auto"
             />
           </div>
         )}

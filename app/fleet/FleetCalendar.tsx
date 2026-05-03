@@ -55,11 +55,24 @@ export default function FleetCalendar({
                 >
                   <td className="sticky left-0 bg-white px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <KayakIllustration
-                        color={k.color}
-                        capacity={k.capacity}
-                        className="h-7 w-auto shrink-0"
-                      />
+                      <div className="relative aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-md bg-[var(--color-bg)]">
+                        {k.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={k.image_url}
+                            alt={k.name}
+                            className="absolute inset-0 h-full w-full object-contain"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <KayakIllustration
+                              color={k.color}
+                              capacity={k.capacity}
+                              className="h-3/5 w-auto"
+                            />
+                          </div>
+                        )}
+                      </div>
                       <div className="min-w-0">
                         <div className="truncate font-medium">{k.name}</div>
                         {k.code && (
