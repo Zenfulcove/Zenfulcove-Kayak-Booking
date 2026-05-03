@@ -3,46 +3,57 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div
-      className="relative flex min-h-screen flex-col bg-[var(--color-bg)]"
+      className="relative flex min-h-screen flex-col bg-[var(--color-ink)]"
       style={{
         backgroundImage: "url(/landing.jpg)",
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition: "top center",
       }}
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/60 via-[var(--color-bg)]/55 to-[var(--color-bg)]/85"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 28%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.7) 100%)",
+        }}
       />
+
       <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5 md:px-10 md:py-7">
-        <Link href="/" className="flex flex-col leading-none">
-          <span className="font-serif text-2xl font-medium tracking-tight text-[var(--color-accent-strong)]">
+        <Link href="/" className="flex flex-col leading-none text-white">
+          <span className="font-serif text-2xl font-medium tracking-tight">
             Zenfulcove
           </span>
-          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-ink-muted)]">
+          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.2em] text-white/80">
             Kayak Booking
           </span>
         </Link>
         <Link
           href="/book"
-          className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium transition hover:border-[var(--color-accent)]"
+          className="rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
         >
           Book
         </Link>
       </header>
 
-      <section className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-12 md:px-10 md:py-16">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+      <section
+        className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-12 text-white md:px-10 md:py-16"
+        style={{ textShadow: "0 2px 12px rgba(0,0,0,0.45)" }}
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em]">
           Reserve a Kayak
         </p>
         <h2 className="mt-4 max-w-3xl font-serif text-5xl font-medium leading-[1.05] tracking-tight md:text-7xl">
           Out on the water.
         </h2>
-        <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--color-ink-muted)] md:text-lg">
+        <p className="mt-5 max-w-xl text-base leading-relaxed text-white/90 md:text-lg">
           One rental is included with your stay. Pick a day, claim your boat,
           and add more if the whole crew wants in.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div
+          className="mt-8 flex flex-wrap gap-3"
+          style={{ textShadow: "none" }}
+        >
           <Link
             href="/book"
             className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-[var(--color-accent-strong)]"
@@ -51,24 +62,21 @@ export default function Home() {
           </Link>
           <Link
             href="/fleet"
-            className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-white px-6 py-3 text-sm font-medium transition hover:border-[var(--color-accent)]"
+            className="inline-flex items-center rounded-full border border-white/40 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
           >
             See the fleet
           </Link>
         </div>
       </section>
 
-      <footer className="relative z-10 mx-auto w-full max-w-5xl px-5 pb-10 pt-6 text-xs text-[var(--color-ink-muted)] md:px-10 md:pb-14">
+      <footer className="relative z-10 mx-auto w-full max-w-5xl px-5 pb-10 pt-6 text-xs text-white/80 md:px-10 md:pb-14">
         <p>
           &copy; {new Date().getFullYear()} Zenfulcove ·{" "}
-          <Link href="/terms" className="hover:text-[var(--color-accent)]">
+          <Link href="/terms" className="hover:text-white">
             Terms
           </Link>{" "}
           ·{" "}
-          <a
-            href="tel:+15122737962"
-            className="hover:text-[var(--color-accent)]"
-          >
+          <a href="tel:+15122737962" className="hover:text-white">
             +1 (512) 273-7962
           </a>
         </p>
