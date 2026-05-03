@@ -10,6 +10,28 @@ import {
   type Booking,
   type Kayak,
 } from "@/lib/types";
+import { PROPERTY_TIMEZONE } from "@/lib/dates";
+
+function formatStamp(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: PROPERTY_TIMEZONE,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatLongDateInProperty(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    timeZone: PROPERTY_TIMEZONE,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 export default function BookingsTable({
   bookings,
@@ -79,9 +101,7 @@ export default function BookingsTable({
                   onClick={() => setActive(b)}
                   className="cursor-pointer border-t border-[var(--color-border)] transition hover:bg-[var(--color-bg)]"
                 >
-                  <td className="px-4 py-3">
-                    {new Date(b.starts_at).toLocaleString()}
-                  </td>
+                  <td className="px-4 py-3">{formatStamp(b.starts_at)}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{b.customer_name}</div>
                     {b.customer_email && (
@@ -147,12 +167,7 @@ export default function BookingsTable({
               <DetailRow label="Stay" value={active.stay_location ?? "—"} />
               <DetailRow
                 label="Date"
-                value={new Date(active.starts_at).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
+                value={formatLongDateInProperty(active.starts_at)}
               />
               <DetailRow label="Status" value={active.status} />
               <DetailRow
@@ -162,12 +177,12 @@ export default function BookingsTable({
               {active.waiver_accepted_at && (
                 <DetailRow
                   label="Waiver accepted"
-                  value={new Date(active.waiver_accepted_at).toLocaleString()}
+                  value={formatStamp(active.waiver_accepted_at)}
                 />
               )}
               <DetailRow
                 label="Booked"
-                value={new Date(active.created_at).toLocaleString()}
+                value={formatStamp(active.created_at)}
               />
             </div>
 
