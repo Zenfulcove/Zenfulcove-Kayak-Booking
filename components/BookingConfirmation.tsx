@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { colorLabel, type BookingSuccess } from "@/lib/types";
+import { colorLabel, formatMoney, type BookingSuccess } from "@/lib/types";
 import { PROPERTY_TIMEZONE } from "@/lib/dates";
 
 function formatDate(dateIso: string): string {
@@ -98,6 +98,14 @@ export default function BookingConfirmation({
         <Row label="Kayak" value={describeKayak(booking.kayak)} />
         <Row label="Paddler" value={`${paddlers} (${jacketLabel})`} />
         <Row label="Stay" value={booking.stayLocation} />
+        <Row
+          label="Total"
+          value={
+            booking.isComplimentary
+              ? "Complimentary"
+              : `${formatMoney(booking.amountCents)} · due at checkout`
+          }
+        />
         <Row label="Booking #" value={`#${booking.referenceCode}`} />
       </div>
 

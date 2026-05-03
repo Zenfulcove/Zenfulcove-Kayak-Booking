@@ -2,20 +2,15 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  STAY_OPTIONS,
-  type BookingSuccess,
-  type Kayak,
-  type StayOption,
-} from "@/lib/types";
+import { type BookingSuccess, type Kayak } from "@/lib/types";
 
-type FieldName = "name" | "email" | "phone" | "stay" | "waiver";
+type FieldName = "name" | "email" | "phone" | "reservation" | "waiver";
 
 const noErrors: Record<FieldName, boolean> = {
   name: false,
   email: false,
   phone: false,
-  stay: false,
+  reservation: false,
   waiver: false,
 };
 
@@ -49,7 +44,7 @@ export default function BookingForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [stay, setStay] = useState<StayOption | null>(null);
+  const [reservation, setReservation] = useState("");
   const [waiver, setWaiver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +54,7 @@ export default function BookingForm({
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
-  const stayRef = useRef<HTMLDivElement>(null);
+  const reservationRef = useRef<HTMLInputElement>(null);
   const waiverRef = useRef<HTMLLabelElement>(null);
 
   function clearFieldError(field: FieldName) {
@@ -76,7 +71,7 @@ export default function BookingForm({
       next.email = true;
     }
     if (phone.trim().length === 0) next.phone = true;
-    if (stay === null) next.stay = true;
+    if (reservation.trim().length === 0) next.reservation = true;
     if (!waiver) next.waiver = true;
 
     const anyError = Object.values(next).some(Boolean);
@@ -86,7 +81,7 @@ export default function BookingForm({
       if (next.name) shake(nameRef.current);
       if (next.email) shake(emailRef.current);
       if (next.phone) shake(phoneRef.current);
-      if (next.stay) shake(stayRef.current);
+      if (next.reservation) shake(reservationRef.current);
       if (next.waiver) shake(waiverRef.current);
       return;
     }
@@ -103,7 +98,7 @@ export default function BookingForm({
           customerName: name.trim(),
           customerEmail: email.trim(),
           customerPhone: phone.trim(),
-          stayLocation: stay,
+          reservationId: reservation.trim(),
           waiverAccepted: waiver,
         }),
       });
@@ -117,7 +112,9 @@ export default function BookingForm({
         customerName: name.trim(),
         dateIso,
         kayak,
-        stayLocation: stay as string,
+        stayLocation: json.cabin ?? "",
+        isComplimentary: Boolean(json.isComplimentary),
+        amountCents: typeof json.amountCents === "number" ? json.amountCents : 0,
       };
 
       if (onSuccess) {
@@ -206,32 +203,26 @@ export default function BookingForm({
       </div>
 
       <div className="space-y-2">
-        <p className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink-muted)]">
-          Where&apos;s your stay
-        </p>
-        <div ref={stayRef} className="grid grid-cols-2 gap-2">
-          {STAY_OPTIONS.map((opt) => {
-            const isActive = stay === opt;
-            const stateClass = isActive
-              ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white shadow-sm"
-              : errors.stay
-                ? "border-red-500 bg-white text-[var(--color-ink)]"
-                : "border-[var(--color-border)] bg-white text-[var(--color-ink)] hover:border-[var(--color-accent)]";
-            return (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => {
-                  setStay(opt);
-                  clearFieldError("stay");
-                }}
-                className={`cursor-pointer rounded-xl border px-4 py-3 text-sm font-medium transition ${stateClass}`}
-              >
-                {opt}
-              </button>
-            );
-          })}
-        </div>
+        <label
+          htmlFor="reservation_id"
+          className="block text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink-muted)]"
+        >
+          Reservation Number
+        </label>
+        <input
+          ref={reservationRef}
+          id="reservation_id"
+          type="text"
+          placeholder="From your booking confirmation email"
+          value={reservation}
+          onChange={(e) => {
+            setReservation(e.target.value);
+            clearFieldError("reservation");
+          }}
+          className={`${inputBaseClass} ${
+            errors.reservation ? inputBad : inputOk
+          }`}
+        />
       </div>
 
       <label

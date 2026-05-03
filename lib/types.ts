@@ -25,6 +25,8 @@ export type Booking = {
   customer_email: string | null;
   customer_phone: string | null;
   stay_location: string | null;
+  lodgify_reservation_id: string | null;
+  is_complimentary: boolean;
   waiver_accepted_at: string | null;
   starts_at: string;
   ends_at: string;
@@ -46,15 +48,22 @@ export type BookingSuccess = {
   dateIso: string;
   kayak: Kayak;
   stayLocation: string;
+  isComplimentary: boolean;
+  amountCents: number;
 };
 
-export const STAY_OPTIONS = [
-  "Sky Castle",
-  "Fairy House",
-  "Desert Rose",
-  "Bird House",
-] as const;
-export type StayOption = (typeof STAY_OPTIONS)[number];
+// Lodgify property ID → cabin display name. Source of truth for which
+// properties feed kayak booking eligibility.
+export const PROPERTY_TO_CABIN: Record<number, string> = {
+  608952: "Fairy House",
+  608953: "Desert Rose",
+  608954: "Sky Castle",
+  608955: "Bird House",
+  754651: "Doodle House",
+};
+
+export const STAY_OPTIONS = Object.values(PROPERTY_TO_CABIN);
+export type StayOption = string;
 
 export const COLOR_OPTIONS: { value: string; label: string }[] = [
   { value: "#dc2626", label: "Red" },

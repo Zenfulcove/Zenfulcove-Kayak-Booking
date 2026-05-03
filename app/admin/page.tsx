@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { type Booking, type Kayak } from "@/lib/types";
 import FleetManager from "./FleetManager";
@@ -36,14 +37,22 @@ export default async function AdminDashboard() {
             Dashboard
           </h1>
         </div>
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium transition hover:border-[var(--color-accent)]"
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/lodgify"
+            className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
           >
-            Sign out
-          </button>
-        </form>
+            Lodgify
+          </Link>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium transition hover:border-[var(--color-accent)]"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <section>
