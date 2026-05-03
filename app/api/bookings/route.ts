@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { STAY_OPTIONS } from "@/lib/types";
+import { propertyTimeToUtc } from "@/lib/dates";
 
 type BookingPayload = {
   kayakId: string;
@@ -71,8 +72,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const start = new Date(`${body.dateIso}T09:00:00`);
-  const end = new Date(`${body.dateIso}T17:00:00`);
+  const start = propertyTimeToUtc(body.dateIso, 9, 0);
+  const end = propertyTimeToUtc(body.dateIso, 17, 0);
   if (!isFinite(start.getTime()) || !isFinite(end.getTime())) {
     return NextResponse.json({ error: "Invalid date" }, { status: 400 });
   }

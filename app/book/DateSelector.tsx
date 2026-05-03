@@ -2,8 +2,14 @@
 
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
+import { formatMonthYear } from "@/lib/dates";
 
-type DateOption = { iso: string; date: Date; available: number };
+type DateOption = {
+  iso: string;
+  dow: string;
+  day: number;
+  available: number;
+};
 
 export default function DateSelector({
   dates,
@@ -15,18 +21,16 @@ export default function DateSelector({
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const selectedDate =
-    dates.find((d) => d.iso === selected)?.date ?? dates[0]?.date ?? new Date();
-  const monthLabel = selectedDate
-    .toLocaleDateString("en-US", { month: "long", year: "numeric" })
-    .toUpperCase();
+  const selectedIso =
+    dates.find((d) => d.iso === selected)?.iso ?? dates[0]?.iso ?? "";
+  const monthLabel = selectedIso ? formatMonthYear(selectedIso) : "";
 
   function scrollByDays(n: number) {
     const el = scrollRef.current;
     if (!el) return;
     const firstChip = el.querySelector("button");
     const chipWidth = firstChip
-      ? firstChip.getBoundingClientRect().width + 8 // chip + gap-2 (~8px)
+      ? firstChip.getBoundingClientRect().width + 8
       : 96;
     el.scrollBy({ left: chipWidth * n, behavior: "smooth" });
   }
@@ -71,52 +75,48 @@ export default function DateSelector({
         ref={scrollRef}
         className="flex gap-2 overflow-x-auto pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
       >
-          {dates.map(({ iso, date, available }) => {
-            const isSelected = iso === selected;
-            const isFull = available === 0;
-            const dow = date
-              .toLocaleDateString("en-US", { weekday: "short" })
-              .toUpperCase();
-            const day = date.getDate();
-            return (
-              <button
-                key={iso}
-                type="button"
-                onClick={() =>
-                  router.push(`/book?date=${iso}`, { scroll: false })
-                }
-                className={`flex min-w-[88px] shrink-0 cursor-pointer flex-col items-center rounded-2xl border px-4 py-3.5 text-center transition ${
-                  isSelected
-                    ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white shadow-sm"
-                    : isFull
-                      ? "border-[var(--color-border)] bg-white text-[var(--color-ink-muted)] hover:border-[var(--color-accent)]"
-                      : "border-[var(--color-border)] bg-white text-[var(--color-ink)] hover:border-[var(--color-accent)]"
+        {dates.map(({ iso, dow, day, available }) => {
+          const isSelected = iso === selected;
+          const isFull = available === 0;
+          return (
+            <button
+              key={iso}
+              type="button"
+              onClick={() =>
+                router.push(`/book?date=${iso}`, { scroll: false })
+              }
+              className={`flex min-w-[88px] shrink-0 cursor-pointer flex-col items-center rounded-2xl border px-4 py-3.5 text-center transition ${
+                isSelected
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white shadow-sm"
+                  : isFull
+                    ? "border-[var(--color-border)] bg-white text-[var(--color-ink-muted)] hover:border-[var(--color-accent)]"
+                    : "border-[var(--color-border)] bg-white text-[var(--color-ink)] hover:border-[var(--color-accent)]"
+              }`}
+            >
+              <span
+                className={`text-[10px] font-semibold tracking-wider ${
+                  isSelected ? "opacity-80" : "text-[var(--color-ink-muted)]"
                 }`}
               >
-                <span
-                  className={`text-[10px] font-semibold tracking-wider ${
-                    isSelected ? "opacity-80" : "text-[var(--color-ink-muted)]"
-                  }`}
-                >
-                  {dow}
-                </span>
-                <span className="mt-1.5 text-2xl font-semibold leading-none">
-                  {day}
-                </span>
-                <span
-                  className={`mt-2 text-[11px] font-medium ${
-                    isSelected
-                      ? "opacity-90"
-                      : isFull
-                        ? "text-red-600"
-                        : "text-[var(--color-accent-strong)]"
-                  }`}
-                >
-                  {isFull ? "Full" : `${available} Open`}
-                </span>
-              </button>
-            );
-          })}
+                {dow}
+              </span>
+              <span className="mt-1.5 font-serif text-2xl font-medium leading-none">
+                {day}
+              </span>
+              <span
+                className={`mt-2 text-[11px] font-medium ${
+                  isSelected
+                    ? "opacity-90"
+                    : isFull
+                      ? "text-red-600"
+                      : "text-[var(--color-accent-strong)]"
+                }`}
+              >
+                {isFull ? "Full" : `${available} Open`}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

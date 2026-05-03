@@ -1,30 +1,11 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { formatMoney, type Kayak } from "@/lib/types";
+import { formatLongDate, todayIso } from "@/lib/dates";
 import { notFound } from "next/navigation";
 import BookingForm from "./BookingForm";
 import KayakIllustration from "@/components/KayakIllustration";
 
 export const dynamic = "force-dynamic";
-
-function todayIso(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function formatDateHeading(dateIso: string): string {
-  const d = new Date(`${dateIso}T00:00:00`);
-  return d
-    .toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    })
-    .toUpperCase();
-}
 
 export default async function KayakBookingPage({
   params,
@@ -53,7 +34,7 @@ export default async function KayakBookingPage({
     <div className="mx-auto max-w-xl space-y-6">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink)]">
-          {formatDateHeading(dateIso)}
+          {formatLongDate(dateIso)}
         </p>
         <h1 className="mt-2 font-serif text-3xl font-medium leading-[1.05] tracking-tight md:text-4xl">
           Almost there.

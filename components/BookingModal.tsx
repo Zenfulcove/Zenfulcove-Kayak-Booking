@@ -6,18 +6,7 @@ import KayakIllustration from "./KayakIllustration";
 import BookingForm from "@/app/book/[kayakId]/BookingForm";
 import BookingConfirmation from "./BookingConfirmation";
 import { formatMoney, type BookingSuccess, type Kayak } from "@/lib/types";
-
-function formatDateHeading(dateIso: string): string {
-  const d = new Date(`${dateIso}T00:00:00`);
-  return d
-    .toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    })
-    .toUpperCase();
-}
+import { formatLongDate } from "@/lib/dates";
 
 export default function BookingModal({
   kayak,
@@ -47,7 +36,7 @@ export default function BookingModal({
           <div className="space-y-6">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink)]">
-                {formatDateHeading(dateIso)}
+                {formatLongDate(dateIso)}
               </p>
               <h2 className="mt-2 font-serif text-3xl font-medium leading-[1.05] tracking-tight md:text-4xl">
                 Almost there.

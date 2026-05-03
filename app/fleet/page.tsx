@@ -1,30 +1,18 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import { type Kayak } from "@/lib/types";
+import {
+  addDaysIso,
+  dayBoundsUtc,
+  dayNumber,
+  formatDow,
+  todayIso,
+} from "@/lib/dates";
 import FleetCalendar from "./FleetCalendar";
 
 export const dynamic = "force-dynamic";
 
 const DAYS = 7;
-
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
-
-function toIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 export default async function FleetPage() {
   const supabase = await createSupabaseServerClient();
@@ -36,9 +24,9 @@ export default async function FleetPage() {
     .order("created_at", { ascending: true });
   const kayaks = (kayakRows ?? []) as Kayak[];
 
-  const rangeStart = startOfToday();
-  const rangeEnd = new Date(rangeStart);
-  rangeEnd.setDate(rangeEnd.getDate() + DAYS);
+  const today = todayIso();
+  const rangeStart = dayBoundsUtc(today).start;
+  const rangeEnd = dayBoundsUtc(addDaysIso(today, DAYS)).start;
 
   const admin = createSupabaseAdminClient();
   const { data: bookingRows } = await admin
@@ -54,30 +42,24 @@ export default async function FleetPage() {
     end: new Date(b.ends_at as string),
   }));
 
-  const dayDates = Array.from({ length: DAYS }, (_, i) => {
-    const d = new Date(rangeStart);
-    d.setDate(d.getDate() + i);
-    return d;
+  const days = Array.from({ length: DAYS }, (_, i) => {
+    const iso = addDaysIso(today, i);
+    return {
+      iso,
+      dow: formatDow(iso),
+      day: dayNumber(iso),
+    };
   });
-
-  const days = dayDates.map((d) => ({
-    iso: toIsoDate(d),
-    dow: d
-      .toLocaleDateString("en-US", { weekday: "short" })
-      .toUpperCase(),
-    day: d.getDate(),
-  }));
 
   const bookedByKayak: Record<string, string[]> = {};
   for (const k of kayaks) {
     const ids: string[] = [];
-    for (const d of dayDates) {
-      const dayStart = d;
-      const dayEnd = endOfDay(d);
+    for (const d of days) {
+      const { start, end } = dayBoundsUtc(d.iso);
       const isOut = overlaps.some(
-        (b) => b.kayakId === k.id && b.start < dayEnd && b.end > dayStart
+        (b) => b.kayakId === k.id && b.start < end && b.end > start
       );
-      if (isOut) ids.push(toIsoDate(d));
+      if (isOut) ids.push(d.iso);
     }
     bookedByKayak[k.id] = ids;
   }

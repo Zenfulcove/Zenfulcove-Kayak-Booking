@@ -1,6 +1,14 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 import type { Kayak } from "@/lib/types";
+import {
+  addDaysIso,
+  dayBoundsUtc,
+  dayNumber,
+  formatDow,
+  formatLongDate,
+  todayIso,
+} from "@/lib/dates";
 import DateSelector from "./DateSelector";
 import AvailableKayaks from "./AvailableKayaks";
 
@@ -8,52 +16,15 @@ export const dynamic = "force-dynamic";
 
 const DAYS_AHEAD = 30;
 
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function parseSelectedDate(value: string | undefined): Date {
-  if (!value) return startOfToday();
-  const parsed = new Date(`${value}T00:00:00`);
-  if (!isFinite(parsed.getTime())) return startOfToday();
-  parsed.setHours(0, 0, 0, 0);
-  return parsed;
-}
-
-function endOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
-
-function toIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function formatDateHeading(d: Date): string {
-  return d
-    .toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    })
-    .toUpperCase();
-}
-
 export default async function BookPage({
   searchParams,
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
   const { date } = await searchParams;
-  const selected = parseSelectedDate(date);
-  const selectedIso = toIsoDate(selected);
+  const today = todayIso();
+  const selectedIso =
+    date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : today;
 
   const supabase = await createSupabaseServerClient();
   const { data: kayakRows } = await supabase
@@ -64,32 +35,30 @@ export default async function BookPage({
     .order("created_at", { ascending: true });
   const kayaks = (kayakRows ?? []) as Kayak[];
 
-  // Pull every booking overlapping the 30-day window so we can compute
-  // availability per day and per kayak. RLS hides bookings from anon, so we
-  // use the admin client server-side.
-  const rangeStart = startOfToday();
-  const rangeEnd = new Date(rangeStart);
-  rangeEnd.setDate(rangeEnd.getDate() + DAYS_AHEAD);
+  // Pull every booking overlapping the 30-day window (in property tz) so we
+  // can compute availability per day and per kayak. Use the admin client
+  // since RLS hides bookings from anon.
+  const rangeStartIso = today;
+  const rangeEndIso = addDaysIso(today, DAYS_AHEAD);
+  const rangeStart = dayBoundsUtc(rangeStartIso).start;
+  const rangeEnd = dayBoundsUtc(rangeEndIso).start;
 
   const admin = createSupabaseAdminClient();
-  const { data: bookingsInRange } = await admin
+  const { data: bookingRows } = await admin
     .from("bookings")
     .select("kayak_id, starts_at, ends_at")
     .in("status", ["pending", "confirmed", "completed"])
     .lt("starts_at", rangeEnd.toISOString())
     .gt("ends_at", rangeStart.toISOString());
 
-  const overlaps = (
-    bookingsInRange ?? []
-  ).map((b) => ({
+  const overlaps = (bookingRows ?? []).map((b) => ({
     kayakId: b.kayak_id as string,
     start: new Date(b.starts_at as string),
     end: new Date(b.ends_at as string),
   }));
 
-  function bookedKayakIdsOn(day: Date): Set<string> {
-    const dayStart = day;
-    const dayEnd = endOfDay(day);
+  function bookedKayakIdsOn(iso: string): Set<string> {
+    const { start: dayStart, end: dayEnd } = dayBoundsUtc(iso);
     const set = new Set<string>();
     for (const b of overlaps) {
       if (b.start < dayEnd && b.end > dayStart) {
@@ -100,17 +69,17 @@ export default async function BookPage({
   }
 
   const dateOptions = Array.from({ length: DAYS_AHEAD }, (_, i) => {
-    const d = new Date(rangeStart);
-    d.setDate(d.getDate() + i);
-    const booked = bookedKayakIdsOn(d);
+    const iso = addDaysIso(today, i);
+    const booked = bookedKayakIdsOn(iso);
     return {
-      iso: toIsoDate(d),
-      date: d,
+      iso,
+      dow: formatDow(iso),
+      day: dayNumber(iso),
       available: Math.max(0, kayaks.length - booked.size),
     };
   });
 
-  const bookedToday = bookedKayakIdsOn(selected);
+  const bookedToday = bookedKayakIdsOn(selectedIso);
   const bookedIds = Array.from(bookedToday);
   const available = kayaks.filter((k) => !bookedToday.has(k.id));
 
@@ -134,7 +103,7 @@ export default async function BookPage({
       <section>
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-ink)]">
-            {formatDateHeading(selected)}
+            {formatLongDate(selectedIso)}
           </h2>
           <p className="text-sm font-medium text-[var(--color-ink-muted)]">
             {available.length === 0

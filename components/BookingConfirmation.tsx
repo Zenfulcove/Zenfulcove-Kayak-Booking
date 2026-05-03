@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { colorLabel, type BookingSuccess } from "@/lib/types";
+import { PROPERTY_TIMEZONE } from "@/lib/dates";
 
 function formatDate(dateIso: string): string {
-  const d = new Date(`${dateIso}T00:00:00`);
-  return d.toLocaleDateString("en-US", {
+  return new Date(`${dateIso}T12:00:00Z`).toLocaleDateString("en-US", {
+    timeZone: PROPERTY_TIMEZONE,
     weekday: "long",
     month: "long",
     day: "numeric",
