@@ -57,6 +57,25 @@ function parseKayakFields(formData: FormData): KayakWritable {
   };
 }
 
+function extractStoragePath(publicUrl: string | null | undefined): string | null {
+  if (!publicUrl) return null;
+  const marker = `/${KAYAK_IMAGE_BUCKET}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx < 0) return null;
+  return publicUrl.slice(idx + marker.length);
+}
+
+async function deleteStoredImage(publicUrl: string | null | undefined) {
+  const path = extractStoragePath(publicUrl);
+  if (!path) return;
+  try {
+    const supabase = createSupabaseAdminClient();
+    await supabase.storage.from(KAYAK_IMAGE_BUCKET).remove([path]);
+  } catch {
+    // Orphaned file isn't fatal; don't block the user's update on cleanup.
+  }
+}
+
 async function uploadImageIfPresent(
   formData: FormData
 ): Promise<string | null> {
@@ -124,13 +143,34 @@ export async function updateKayak(formData: FormData) {
   const newImageUrl = await uploadImageIfPresent(formData);
 
   const supabase = await createSupabaseServerClient();
+
+  let oldImageUrl: string | null = null;
+  if (newImageUrl) {
+    const { data: existing } = await supabase
+      .from("kayaks")
+      .select("image_url")
+      .eq("id", id)
+      .maybeSingle();
+    oldImageUrl = existing?.image_url ?? null;
+  }
+
   const update: KayakWritable & { image_url?: string } = { ...fields };
   if (newImageUrl) {
     update.image_url = newImageUrl;
   }
 
   const { error } = await supabase.from("kayaks").update(update).eq("id", id);
-  if (error) throw new Error(explainSaveError(error));
+  if (error) {
+    // Roll back the orphaned new upload so we don't leak storage.
+    if (newImageUrl) {
+      await deleteStoredImage(newImageUrl);
+    }
+    throw new Error(explainSaveError(error));
+  }
+
+  if (newImageUrl && oldImageUrl) {
+    await deleteStoredImage(oldImageUrl);
+  }
 
   revalidatePath("/admin");
   revalidatePath("/book");
@@ -141,6 +181,13 @@ export async function deleteKayak(id: string) {
   if (!id) throw new Error("Missing kayak id.");
 
   const supabase = await createSupabaseServerClient();
+
+  const { data: existing } = await supabase
+    .from("kayaks")
+    .select("image_url")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("kayaks").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {
@@ -150,6 +197,8 @@ export async function deleteKayak(id: string) {
     }
     throw new Error(`Delete failed: ${error.message}`);
   }
+
+  await deleteStoredImage(existing?.image_url);
 
   revalidatePath("/admin");
   revalidatePath("/book");
