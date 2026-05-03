@@ -111,6 +111,7 @@ export default async function BookPage({
   });
 
   const bookedToday = bookedKayakIdsOn(selected);
+  const bookedIds = Array.from(bookedToday);
   const available = kayaks.filter((k) => !bookedToday.has(k.id));
 
   return (
@@ -144,17 +145,17 @@ export default async function BookPage({
           </p>
         </div>
 
-        {available.length > 0 ? (
+        {kayaks.length > 0 ? (
           <div className="mt-4">
-            <AvailableKayaks kayaks={available} dateIso={selectedIso} />
+            <AvailableKayaks
+              kayaks={kayaks}
+              bookedIds={bookedIds}
+              dateIso={selectedIso}
+            />
           </div>
-        ) : kayaks.length === 0 ? (
-          <p className="mt-4 rounded-2xl border border-dashed border-[var(--color-border)] bg-white p-6 text-center text-sm text-[var(--color-ink-muted)]">
-            No kayaks in the fleet yet. Add some in Supabase to get started.
-          </p>
         ) : (
           <p className="mt-4 rounded-2xl border border-dashed border-[var(--color-border)] bg-white p-6 text-center text-sm text-[var(--color-ink-muted)]">
-            All kayaks are booked for this day. Try another date.
+            No kayaks in the fleet yet. Add some in Supabase to get started.
           </p>
         )}
       </section>

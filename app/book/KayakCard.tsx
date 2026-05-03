@@ -1,18 +1,37 @@
-import { formatMoney, type Kayak } from "@/lib/types";
+import { colorLabel, formatMoney, type Kayak } from "@/lib/types";
 import KayakIllustration from "@/components/KayakIllustration";
+
+function describeKayak(k: Kayak): string {
+  const parts: string[] = [colorLabel(k.color)];
+  if (k.length_feet) parts.push(`${k.length_feet} ft`);
+  parts.push(`${k.capacity} ${k.capacity === 1 ? "paddler" : "paddlers"}`);
+  return parts.join(" · ");
+}
 
 export default function KayakCard({
   kayak,
+  isOut = false,
   onClick,
 }: {
   kayak: Kayak;
-  onClick: () => void;
+  isOut?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group block w-full cursor-pointer overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+      disabled={isOut}
+      aria-label={
+        isOut
+          ? `${kayak.name} — out for this day`
+          : `Reserve ${kayak.name}`
+      }
+      className={`group block w-full overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] text-left transition ${
+        isOut
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg"
+      }`}
     >
       <div className="relative flex h-44 items-center justify-center bg-[var(--color-bg)]">
         <KayakIllustration
@@ -20,27 +39,38 @@ export default function KayakCard({
           capacity={kayak.capacity}
           className="h-20 w-auto"
         />
-        <span className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-ink)] backdrop-blur">
-          {kayak.capacity === 1 ? "Solo" : `${kayak.capacity}-seat`}
+        <span
+          className={`absolute right-3 top-3 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${
+            isOut
+              ? "border border-[var(--color-border)] bg-white text-[var(--color-ink-muted)]"
+              : "bg-[var(--color-accent)] text-white shadow-sm"
+          }`}
+        >
+          {isOut ? "Out" : "Open"}
         </span>
       </div>
       <div className="space-y-3 p-5">
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <h3 className="font-serif text-xl font-medium tracking-tight">
               {kayak.name}
             </h3>
-            {kayak.length_feet && (
-              <p className="mt-0.5 text-xs text-[var(--color-ink-muted)]">
-                {kayak.length_feet} ft
-              </p>
-            )}
+            <p className="mt-0.5 text-xs text-[var(--color-ink-muted)]">
+              {describeKayak(kayak)}
+            </p>
           </div>
           <span className="whitespace-nowrap text-sm font-medium text-[var(--color-accent-strong)]">
             {formatMoney(kayak.daily_rate_cents)}/day
           </span>
         </div>
-        <div className="pt-1 text-sm font-medium text-[var(--color-accent-strong)] group-hover:underline">
+        <div
+          className={`pt-1 text-sm font-medium ${
+            isOut
+              ? "invisible"
+              : "text-[var(--color-accent-strong)] group-hover:underline"
+          }`}
+          aria-hidden={isOut}
+        >
           Reserve →
         </div>
       </div>
