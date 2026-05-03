@@ -59,10 +59,17 @@ export default async function AdminDashboard() {
       </section>
 
       <section>
-        <h2 className="font-serif text-2xl font-medium tracking-tight">
-          Recent bookings ({bookings.length})
-        </h2>
-        <BookingsTable bookings={bookings} />
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="font-serif text-2xl font-medium tracking-tight">
+            Recent bookings ({bookings.length})
+          </h2>
+          {bookings.length > 0 && (
+            <p className="text-sm text-[var(--color-ink-muted)]">
+              Click a row to view or delete.
+            </p>
+          )}
+        </div>
+        <BookingsTable bookings={bookings} kayaks={kayaks} />
       </section>
     </div>
   );

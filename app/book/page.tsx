@@ -123,8 +123,8 @@ export default async function BookPage({
           Out on the water.
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--color-ink-muted)]">
-          Five kayaks, three colors, two seats between them. Pick a day, claim a
-          boat, and we&apos;ll hand off the lockbox code.
+          One rental is included with your stay. Pick a day, claim your boat,
+          and add more if the whole crew wants in.
         </p>
       </section>
 

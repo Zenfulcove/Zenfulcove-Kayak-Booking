@@ -28,8 +28,8 @@ export default function Home() {
           Out on the water.
         </h2>
         <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--color-ink-muted)] md:text-lg">
-          Five kayaks, three colors, two seats between them. Pick a day, claim
-          a boat, and we&apos;ll hand off the lockbox code.
+          One rental is included with your stay. Pick a day, claim your boat,
+          and add more if the whole crew wants in.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
@@ -47,7 +47,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mx-auto w-full max-w-5xl px-5 py-6 text-xs text-[var(--color-ink-muted)] md:px-10">
+      <footer className="mx-auto w-full max-w-5xl px-5 pb-10 pt-6 text-xs text-[var(--color-ink-muted)] md:px-10 md:pb-14">
         <p>
           &copy; {new Date().getFullYear()} Zenfulcove ·{" "}
           <Link href="/terms" className="hover:text-[var(--color-accent)]">
