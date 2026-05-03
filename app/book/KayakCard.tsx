@@ -39,7 +39,7 @@ export default function KayakCard({
           <img
             src={kayak.image_url}
             alt={kayak.name}
-            className="absolute inset-0 h-full w-full object-contain"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

@@ -61,7 +61,7 @@ export default function FleetCalendar({
                           <img
                             src={k.image_url}
                             alt={k.name}
-                            className="absolute inset-0 h-full w-full object-contain"
+                            className="absolute inset-0 h-full w-full object-cover"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center">
